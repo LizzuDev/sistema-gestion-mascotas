@@ -1,0 +1,16 @@
+# Compilados y binarios de Java
+bin/
+*.class
+
+# Documentación de TSP y listas de verificación (No subir al repositorio)
+docs/
+
+# Configuración local de IDEs y editores
+.vscode/
+.idea/
+*.iml
+
+# Archivos temporales y de registro
+*.log
+tmp/
+temp/
