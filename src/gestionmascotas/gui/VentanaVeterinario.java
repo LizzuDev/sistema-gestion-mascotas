@@ -1,349 +1,179 @@
 package gestionmascotas.gui;
-
-import gestionmascotas.dp.controllers.SesionUsuario;
-import gestionmascotas.dp.models.VeterinarioDP;
-import gestionmascotas.md.IVeterinarioMD;
-import gestionmascotas.md.VeterinarioMD;
-
+import gestionmascotas.dp.controladores.SesionUsuario;
+import gestionmascotas.dp.modelos.VeterinarioDP;
+import gestionmascotas.util.GestorMensajes;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.sql.SQLException;
 import java.util.List;
-
-/**
- * Módulo de Gestión de Veterinarios (F5).
- * Encargado: Gabriel Aguinaga (Calidad).
- * Cumple con STD-02, STD-05 (UI Segura) y STD-09 (Errores).
- */
 public class VentanaVeterinario extends JPanel {
-    private final IVeterinarioMD veterinarioMD = new VeterinarioMD();
-
     private JTable tblVeterinarios;
     private DefaultTableModel modelVeterinarios;
-
-    private JTextField txtNombre;
-    private JTextField txtIdentificacion;
+    private JTextField txtCedula;
+    private JTextField txtNombres;
+    private JTextField txtApellidos;
     private JTextField txtEspecialidad;
+    private JTextField txtLicencia;
     private JTextField txtTelefono;
-
     private JButton btnRegistrar;
     private JButton btnModificar;
     private JButton btnEliminar;
     private JButton btnLimpiar;
-
     private int selectedVeterinarioId = -1;
     private final Runnable onDataChanged;
-
     public VentanaVeterinario(Runnable onDataChanged) {
         this.onDataChanged = onDataChanged;
         setLayout(new BorderLayout(15, 15));
-        setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
-        // Cabecera
         JPanel pnlHeader = new JPanel(new BorderLayout());
-        pnlHeader.setBackground(Color.WHITE);
-        JLabel lblTitle = new JLabel("Gestión de Veterinarios (F5)");
+        JLabel lblTitle = new JLabel("Gestión de Veterinarios");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblTitle.setForeground(new Color(15, 23, 42));
-        JLabel lblDesc = new JLabel("Administre el equipo de profesionales veterinarios asociados al refugio.");
-        lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblDesc.setForeground(new Color(100, 116, 139));
         pnlHeader.add(lblTitle, BorderLayout.NORTH);
-        pnlHeader.add(lblDesc, BorderLayout.SOUTH);
-
         add(pnlHeader, BorderLayout.NORTH);
+        JPanel pnlForm = new JPanel(new GridLayout(0, 4, 10, 10));
+        pnlForm.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Formulario (Izquierda)
-        JPanel pnlForm = new JPanel(new GridBagLayout());
-        pnlForm.setBackground(new Color(248, 250, 252));
-        pnlForm.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        pnlForm.setPreferredSize(new Dimension(320, 0));
+        pnlForm.add(new JLabel("Cédula:"));
+        txtCedula = new JTextField(); 
+        txtCedula.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isDigit(e.getKeyChar()) || txtCedula.getText().length() >= 10) e.consume(); } });
+        pnlForm.add(txtCedula);
+        
+        pnlForm.add(new JLabel("Nombres:"));
+        txtNombres = new JTextField(); 
+        txtNombres.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isLetter(e.getKeyChar()) && !Character.isWhitespace(e.getKeyChar()) || txtNombres.getText().length() >= 150) e.consume(); } });
+        pnlForm.add(txtNombres);
+        
+        pnlForm.add(new JLabel("Apellidos:"));
+        txtApellidos = new JTextField(); 
+        txtApellidos.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isLetter(e.getKeyChar()) && !Character.isWhitespace(e.getKeyChar()) || txtApellidos.getText().length() >= 150) e.consume(); } });
+        pnlForm.add(txtApellidos);
+        
+        pnlForm.add(new JLabel("Especialidad:"));
+        txtEspecialidad = new JTextField(); 
+        txtEspecialidad.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isLetter(e.getKeyChar()) && !Character.isWhitespace(e.getKeyChar()) || txtEspecialidad.getText().length() >= 100) e.consume(); } });
+        pnlForm.add(txtEspecialidad);
+        
+        pnlForm.add(new JLabel("Licencia:"));
+        txtLicencia = new JTextField(); 
+        txtLicencia.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (txtLicencia.getText().length() >= 50) e.consume(); } });
+        pnlForm.add(txtLicencia);
+        
+        pnlForm.add(new JLabel("Teléfono:"));
+        txtTelefono = new JTextField(); 
+        txtTelefono.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isDigit(e.getKeyChar()) || txtTelefono.getText().length() >= 10) e.consume(); } });
+        pnlForm.add(txtTelefono);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new java.awt.Insets(5, 5, 5, 5);
-        gbc.weightx = 1.0;
+        pnlForm.add(new JLabel("")); pnlForm.add(new JLabel("")); // fillers
 
-        // Nombre
-        gbc.gridx = 0; gbc.gridy = 0;
-        pnlForm.add(new JLabel("Nombre Completo:"), gbc);
-        gbc.gridy = 1;
-        txtNombre = new JTextField();
-        txtNombre.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtNombre, gbc);
+        JPanel pnlButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        btnRegistrar = new JButton("Registrar"); btnModificar = new JButton("Modificar"); btnEliminar = new JButton("Eliminar"); btnLimpiar = new JButton("Limpiar");
+        btnModificar.setEnabled(false); btnEliminar.setEnabled(false);
+        if ("VOLUNTARIO".equals(gestionmascotas.dp.controladores.SesionUsuario.getUsuarioActual().getCargo())) btnEliminar.setVisible(false);
+        pnlButtons.add(btnRegistrar); pnlButtons.add(btnModificar); pnlButtons.add(btnEliminar); pnlButtons.add(btnLimpiar);
 
-        // Identificacion (Cédula)
-        gbc.gridy = 2;
-        pnlForm.add(new JLabel("Identificación (Cédula):"), gbc);
-        gbc.gridy = 3;
-        txtIdentificacion = new JTextField();
-        txtIdentificacion.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtIdentificacion, gbc);
+        JPanel pnlTop = new JPanel(new BorderLayout());
+        pnlTop.add(pnlForm, BorderLayout.CENTER);
+        pnlTop.add(pnlButtons, BorderLayout.SOUTH);
+        add(pnlTop, BorderLayout.NORTH);
 
-        // Especialidad
-        gbc.gridy = 4;
-        pnlForm.add(new JLabel("Especialidad médica:"), gbc);
-        gbc.gridy = 5;
-        txtEspecialidad = new JTextField();
-        txtEspecialidad.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtEspecialidad, gbc);
-
-        // Telefono
-        gbc.gridy = 6;
-        pnlForm.add(new JLabel("Teléfono Contacto:"), gbc);
-        gbc.gridy = 7;
-        txtTelefono = new JTextField();
-        txtTelefono.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtTelefono, gbc);
-
-        // Botones
-        gbc.gridy = 8;
-        gbc.insets = new java.awt.Insets(15, 5, 5, 5);
-        JPanel pnlButtons = new JPanel(new GridLayout(2, 2, 8, 8));
-        pnlButtons.setBackground(new Color(248, 250, 252));
-
-        btnRegistrar = new JButton("Registrar");
-        btnRegistrar.setBackground(new Color(16, 185, 129));
-        btnRegistrar.setForeground(Color.WHITE);
-        btnRegistrar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnRegistrar.setFocusPainted(false);
-
-        btnModificar = new JButton("Modificar");
-        btnModificar.setBackground(new Color(59, 130, 246));
-        btnModificar.setForeground(Color.WHITE);
-        btnModificar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnModificar.setFocusPainted(false);
-        btnModificar.setEnabled(false);
-
-        btnEliminar = new JButton("Eliminar");
-        btnEliminar.setBackground(new Color(239, 68, 68));
-        btnEliminar.setForeground(Color.WHITE);
-        btnEliminar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnEliminar.setFocusPainted(false);
-        btnEliminar.setEnabled(false);
-
-        btnLimpiar = new JButton("Limpiar");
-        btnLimpiar.setBackground(new Color(100, 116, 139));
-        btnLimpiar.setForeground(Color.WHITE);
-        btnLimpiar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnLimpiar.setFocusPainted(false);
-
-        pnlButtons.add(btnRegistrar);
-        pnlButtons.add(btnModificar);
-        pnlButtons.add(btnEliminar);
-        pnlButtons.add(btnLimpiar);
-
-        pnlForm.add(pnlButtons, gbc);
-
-        add(pnlForm, BorderLayout.WEST);
-
-        // Tabla
-        JPanel pnlTable = new JPanel(new BorderLayout(10, 10));
-        pnlTable.setBackground(Color.WHITE);
-
-        String[] columnas = {"ID", "Nombre", "Identificación", "Especialidad", "Teléfono"};
-        modelVeterinarios = new DefaultTableModel(columnas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
+        JPanel pnlTable = new JPanel(new BorderLayout());
+        String[] columnas = {"ID", "Cédula", "Nombres", "Apellidos", "Especialidad", "Licencia", "Teléfono"};
+        modelVeterinarios = new DefaultTableModel(columnas, 0) { public boolean isCellEditable(int row, int column) { return false; } };
         tblVeterinarios = new JTable(modelVeterinarios);
-        tblVeterinarios.setRowHeight(25);
-        tblVeterinarios.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tblVeterinarios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tblVeterinarios.setShowGrid(false);
-
-        JTableHeader header = tblVeterinarios.getTableHeader();
-        header.setBackground(new Color(241, 245, 249));
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-
-        JScrollPane scroll = new JScrollPane(tblVeterinarios);
-        scroll.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240)));
-        pnlTable.add(scroll, BorderLayout.CENTER);
-
+        tblVeterinarios.getColumnModel().getColumn(0).setMaxWidth(30);
+        tblVeterinarios.getColumnModel().getColumn(0).setPreferredWidth(30);
+        pnlTable.add(new JScrollPane(tblVeterinarios), BorderLayout.CENTER);
         add(pnlTable, BorderLayout.CENTER);
-
-        // Listeners
-        btnRegistrar.addActionListener(e -> registrarVeterinario());
-        btnModificar.addActionListener(e -> modificarVeterinario());
-        btnEliminar.addActionListener(e -> eliminarVeterinario());
+        btnRegistrar.addActionListener(e -> registrar());
+        btnModificar.addActionListener(e -> modificar());
+        btnEliminar.addActionListener(e -> eliminar());
         btnLimpiar.addActionListener(e -> limpiarFormulario());
-
         tblVeterinarios.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tblVeterinarios.getSelectedRow() != -1) {
-                cargarVeterinarioSeleccionado();
-            }
+            if (!e.getValueIsAdjusting() && tblVeterinarios.getSelectedRow() != -1) cargarSeleccionado();
         });
-
-        // Inicializar
         recargarTabla();
     }
-
     public void recargarTabla() {
         try {
             modelVeterinarios.setRowCount(0);
-            List<VeterinarioDP> lista = veterinarioMD.obtenerTodos();
-            for (VeterinarioDP v : lista) {
-                modelVeterinarios.addRow(new Object[]{
-                    v.getIdVeterinario(),
-                    v.getNombre(),
-                    v.getIdentificacion(),
-                    v.getEspecialidad(),
-                    v.getTelefono()
-                });
+            for (VeterinarioDP v : new VeterinarioDP().consultarDP()) {
+                modelVeterinarios.addRow(new Object[]{v.getIdVeterinario(), v.getCedula(), v.getNombres(), v.getApellidos(), v.getEspecialidad(), v.getLicencia(), v.getTelefono()});
             }
-        } catch (SQLException e) {
-            System.err.println("Error al cargar veterinarios: " + e.getMessage());
-        }
+        } catch (SQLException e) { manejarError(e); }
     }
-
-    private void registrarVeterinario() {
-        if (!validarCampos()) return;
-
-        VeterinarioDP v = new VeterinarioDP();
-        v.setNombre(txtNombre.getText().trim());
-        v.setIdentificacion(txtIdentificacion.getText().trim());
-        v.setEspecialidad(txtEspecialidad.getText().trim());
-        v.setTelefono(txtTelefono.getText().trim());
-
-        try {
-            int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
-            veterinarioMD.insertar(v, ejecutor);
-            
-            JOptionPane.showMessageDialog(this, "Veterinario registrado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            limpiarFormulario();
-            recargarTabla();
-            onDataChanged.run();
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, 
-                "Error de base de datos al registrar veterinario: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void modificarVeterinario() {
-        if (selectedVeterinarioId == -1) return;
-        if (!validarCampos()) return;
-
-        VeterinarioDP v = new VeterinarioDP();
-        v.setIdVeterinario(selectedVeterinarioId);
-        v.setNombre(txtNombre.getText().trim());
-        v.setIdentificacion(txtIdentificacion.getText().trim());
-        v.setEspecialidad(txtEspecialidad.getText().trim());
-        v.setTelefono(txtTelefono.getText().trim());
-
-        try {
-            int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
-            veterinarioMD.actualizar(v, ejecutor);
-            
-            JOptionPane.showMessageDialog(this, "Veterinario modificado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            limpiarFormulario();
-            recargarTabla();
-            onDataChanged.run();
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, 
-                "Error de base de datos al modificar veterinario: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void eliminarVeterinario() {
-        if (selectedVeterinarioId == -1) return;
-        int result = JOptionPane.showConfirmDialog(this, 
-            "¿Está seguro de eliminar este veterinario?", 
-            "Confirmar", JOptionPane.YES_NO_OPTION);
-        
-        if (result == JOptionPane.YES_OPTION) {
-            try {
-                int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
-                veterinarioMD.eliminar(selectedVeterinarioId, ejecutor);
-                
-                JOptionPane.showMessageDialog(this, "Veterinario eliminado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                limpiarFormulario();
-                recargarTabla();
-                onDataChanged.run();
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Error al eliminar veterinario (posiblemente esté agendado en citas activas): " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
-    private void cargarVeterinarioSeleccionado() {
-        int row = tblVeterinarios.getSelectedRow();
-        if (row != -1) {
-            selectedVeterinarioId = (int) modelVeterinarios.getValueAt(row, 0);
-            txtNombre.setText((String) modelVeterinarios.getValueAt(row, 1));
-            txtIdentificacion.setText((String) modelVeterinarios.getValueAt(row, 2));
-            txtEspecialidad.setText((String) modelVeterinarios.getValueAt(row, 3));
-            txtTelefono.setText((String) modelVeterinarios.getValueAt(row, 4));
-
-            aplicarPermisosVisuales();
-        }
-    }
-
-    private void limpiarFormulario() {
-        selectedVeterinarioId = -1;
-        txtNombre.setText("");
-        txtIdentificacion.setText("");
-        txtEspecialidad.setText("");
-        txtTelefono.setText("");
-        
-        tblVeterinarios.clearSelection();
-        btnRegistrar.setEnabled(true);
-        btnModificar.setEnabled(false);
-        btnEliminar.setEnabled(false);
-
-        aplicarPermisosVisuales();
-    }
-
     private boolean validarCampos() {
-        if (txtNombre.getText().trim().isEmpty() || 
-            txtIdentificacion.getText().trim().isEmpty() || 
-            txtEspecialidad.getText().trim().isEmpty() || 
-            txtTelefono.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+        if (txtCedula.getText().trim().isEmpty() || txtNombres.getText().trim().isEmpty() || txtApellidos.getText().trim().isEmpty() ||
+            txtEspecialidad.getText().trim().isEmpty() || txtLicencia.getText().trim().isEmpty() || txtTelefono.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.incomplete.msg"), GestorMensajes.get("val.incomplete.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (!txtCedula.getText().trim().matches("^\\d{10}$")) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.cedula"), GestorMensajes.get("val.error.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (!txtNombres.getText().trim().matches("^[a-zA-ZñÑáéíóúÁÉÍÓÚ ]{3,100}$") || !txtApellidos.getText().trim().matches("^[a-zA-ZñÑáéíóúÁÉÍÓÚ ]{3,100}$")) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.nombres"), GestorMensajes.get("val.error.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (!txtTelefono.getText().trim().matches("^\\d{7,10}$")) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.telefono"), GestorMensajes.get("val.error.title"), JOptionPane.WARNING_MESSAGE);
             return false;
         }
         return true;
     }
 
-    public void aplicarPermisosVisuales() {
-        boolean tienePermisoEscritura = SesionUsuario.esLider() || SesionUsuario.esCalidad();
-        
-        if (!tienePermisoEscritura) {
-            btnRegistrar.setEnabled(false);
-            btnModificar.setEnabled(false);
-            btnEliminar.setEnabled(false);
-            
-            txtNombre.setEnabled(false);
-            txtIdentificacion.setEnabled(false);
-            txtEspecialidad.setEnabled(false);
-            txtTelefono.setEnabled(false);
-        } else {
-            txtNombre.setEnabled(true);
-            txtIdentificacion.setEnabled(true);
-            txtEspecialidad.setEnabled(true);
-            txtTelefono.setEnabled(true);
+    private String fmt(String t) {
+        String s = java.text.Normalizer.normalize(t.trim(), java.text.Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "").toLowerCase();
+        StringBuilder r = new StringBuilder();
+        for (String p : s.split(" ")) if (!p.isEmpty()) r.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1)).append(" ");
+        return r.toString().trim();
+    }
 
-            if (selectedVeterinarioId != -1) {
-                btnRegistrar.setEnabled(false);
-                btnModificar.setEnabled(true);
-                btnEliminar.setEnabled(true);
-            } else {
-                btnRegistrar.setEnabled(true);
-                btnModificar.setEnabled(false);
-                btnEliminar.setEnabled(false);
-            }
+    private void manejarError(SQLException e) {
+        String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        System.err.printf("[%s] %s: %s%n", timestamp, e.getClass().getSimpleName(), e.getMessage());
+        String msg = GestorMensajes.get("error.db.default");
+        if (e.getMessage() != null) {
+            String lower = e.getMessage().toLowerCase();
+            if ("23505".equals(e.getSQLState()) || lower.contains("uq_") || lower.contains("duplicate key") || lower.contains("unique constraint") || lower.contains("llave duplicada") || lower.contains("unicidad")) msg = GestorMensajes.get("error.db.duplicate");
+            else if (lower.contains("foreign key")) msg = GestorMensajes.get("error.db.foreignkey");
+            else if (lower.contains("cédula") || lower.contains("correo") || lower.contains("licencia") || lower.contains("dependencias")) msg = e.getMessage();
         }
+        JOptionPane.showMessageDialog(this, msg, GestorMensajes.get("error.db.title"), JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void registrar() {
+        if (!validarCampos()) return;
+        VeterinarioDP v = new VeterinarioDP();
+        v.setCedula(txtCedula.getText().trim()); v.setNombres(fmt(txtNombres.getText())); v.setApellidos(fmt(txtApellidos.getText())); v.setEspecialidad(fmt(txtEspecialidad.getText())); v.setLicencia(txtLicencia.getText().trim()); v.setTelefono(txtTelefono.getText().trim());
+        try { v.grabarDP(SesionUsuario.getUsuarioActual().getIdPersonal()); limpiarFormulario(); recargarTabla(); JOptionPane.showMessageDialog(this, GestorMensajes.get("success.register", "Veterinario"), GestorMensajes.get("success.title"), JOptionPane.INFORMATION_MESSAGE); onDataChanged.run(); } catch (SQLException e) { manejarError(e); }
+    }
+
+    private void modificar() {
+        if (selectedVeterinarioId == -1 || !validarCampos()) return;
+        VeterinarioDP v = new VeterinarioDP();
+        v.setIdVeterinario(selectedVeterinarioId); v.setCedula(txtCedula.getText().trim()); v.setNombres(fmt(txtNombres.getText())); v.setApellidos(fmt(txtApellidos.getText())); v.setEspecialidad(fmt(txtEspecialidad.getText())); v.setLicencia(txtLicencia.getText().trim()); v.setTelefono(txtTelefono.getText().trim());
+        try { v.grabarDP(SesionUsuario.getUsuarioActual().getIdPersonal()); limpiarFormulario(); recargarTabla(); JOptionPane.showMessageDialog(this, GestorMensajes.get("success.update", "Veterinario"), GestorMensajes.get("success.title"), JOptionPane.INFORMATION_MESSAGE); onDataChanged.run(); } catch (SQLException e) { manejarError(e); }
+    }
+
+    private void eliminar() {
+        if (selectedVeterinarioId == -1) return;
+        int confirm = JOptionPane.showConfirmDialog(this, GestorMensajes.get("confirm.delete.msg"), GestorMensajes.get("confirm.delete.title"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        try { VeterinarioDP v = new VeterinarioDP(); v.setIdVeterinario(selectedVeterinarioId); v.eliminarDP(SesionUsuario.getUsuarioActual().getIdPersonal()); limpiarFormulario(); recargarTabla(); JOptionPane.showMessageDialog(this, GestorMensajes.get("success.delete", "Veterinario"), GestorMensajes.get("success.title"), JOptionPane.INFORMATION_MESSAGE); onDataChanged.run(); } catch (SQLException e) { manejarError(e); }
+    }
+    private void cargarSeleccionado() {
+        int row = tblVeterinarios.getSelectedRow();
+        if (row != -1) {
+            selectedVeterinarioId = (int) modelVeterinarios.getValueAt(row, 0); txtCedula.setText((String) modelVeterinarios.getValueAt(row, 1)); txtNombres.setText((String) modelVeterinarios.getValueAt(row, 2)); txtApellidos.setText((String) modelVeterinarios.getValueAt(row, 3)); txtEspecialidad.setText((String) modelVeterinarios.getValueAt(row, 4)); txtLicencia.setText((String) modelVeterinarios.getValueAt(row, 5)); txtTelefono.setText((String) modelVeterinarios.getValueAt(row, 6));
+            btnRegistrar.setEnabled(false); btnModificar.setEnabled(true); btnEliminar.setEnabled(true);
+        }
+    }
+    private void limpiarFormulario() {
+        selectedVeterinarioId = -1; txtCedula.setText(""); txtNombres.setText(""); txtApellidos.setText(""); txtEspecialidad.setText(""); txtLicencia.setText(""); txtTelefono.setText("");
+        tblVeterinarios.clearSelection(); btnRegistrar.setEnabled(true); btnModificar.setEnabled(false); btnEliminar.setEnabled(false);
     }
 }

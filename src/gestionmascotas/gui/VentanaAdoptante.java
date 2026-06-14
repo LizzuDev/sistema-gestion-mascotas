@@ -1,32 +1,31 @@
 package gestionmascotas.gui;
 
-import gestionmascotas.dp.controllers.SesionUsuario;
-import gestionmascotas.dp.models.AdoptanteDP;
-import gestionmascotas.md.AdoptanteMD;
-import gestionmascotas.md.IAdoptanteMD;
+import gestionmascotas.dp.controladores.SesionUsuario;
+import gestionmascotas.dp.modelos.AdoptanteDP;
+import gestionmascotas.util.GestorMensajes;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZoneId;
 import java.util.List;
+import com.toedter.calendar.JDateChooser;
 
-/**
- * Módulo de Gestión de Adoptantes (F2).
- * Encargado: Joselyn Cadena (Desarrollo).
- * Cumple con STD-02, STD-05 (UI Segura) y STD-09 (Errores).
- */
 public class VentanaAdoptante extends JPanel {
-    private final IAdoptanteMD adoptanteMD = new AdoptanteMD();
 
     private JTable tblAdoptantes;
     private DefaultTableModel modelAdoptantes;
 
+    private JTextField txtCedula;
     private JTextField txtNombre;
-    private JTextField txtIdentificacion;
-    private JTextField txtCorreo;
-    private JTextField txtTelefono;
+    private JDateChooser dcFechaNacimiento;
+    private JTextField txtDireccion;
+    private JTextField txtOcupacion;
 
     private JButton btnRegistrar;
     private JButton btnModificar;
@@ -39,315 +38,247 @@ public class VentanaAdoptante extends JPanel {
     public VentanaAdoptante(Runnable onDataChanged) {
         this.onDataChanged = onDataChanged;
         setLayout(new BorderLayout(15, 15));
-        setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Cabecera
         JPanel pnlHeader = new JPanel(new BorderLayout());
-        pnlHeader.setBackground(Color.WHITE);
         JLabel lblTitle = new JLabel("Gestión de Adoptantes (F2)");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblTitle.setForeground(new Color(15, 23, 42));
-        JLabel lblDesc = new JLabel("Administre el registro y contacto de los adoptantes postulantes.");
-        lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblDesc.setForeground(new Color(100, 116, 139));
         pnlHeader.add(lblTitle, BorderLayout.NORTH);
-        pnlHeader.add(lblDesc, BorderLayout.SOUTH);
-
         add(pnlHeader, BorderLayout.NORTH);
 
-        // Formulario (Izquierda)
-        JPanel pnlForm = new JPanel(new GridBagLayout());
-        pnlForm.setBackground(new Color(248, 250, 252));
-        pnlForm.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        pnlForm.setPreferredSize(new Dimension(320, 0));
+        JPanel pnlForm = new JPanel(new GridLayout(0, 4, 10, 10));
+        pnlForm.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new java.awt.Insets(5, 5, 5, 5);
-        gbc.weightx = 1.0;
+        pnlForm.add(new JLabel("Cédula:"));
+        txtCedula = new JTextField();
+        txtCedula.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isDigit(e.getKeyChar()) || txtCedula.getText().length() >= 10) e.consume(); } });
+        pnlForm.add(txtCedula);
 
-        // Nombre
-        gbc.gridx = 0; gbc.gridy = 0;
-        pnlForm.add(new JLabel("Nombre Completo:"), gbc);
-        gbc.gridy = 1;
+        pnlForm.add(new JLabel("Nombres:"));
         txtNombre = new JTextField();
-        txtNombre.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtNombre, gbc);
+        txtNombre.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isLetter(e.getKeyChar()) && !Character.isWhitespace(e.getKeyChar()) || txtNombre.getText().length() >= 100) e.consume(); } });
+        pnlForm.add(txtNombre);
 
-        // Identificacion (Cédula)
-        gbc.gridy = 2;
-        pnlForm.add(new JLabel("Identificación (Cédula):"), gbc);
-        gbc.gridy = 3;
-        txtIdentificacion = new JTextField();
-        txtIdentificacion.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtIdentificacion, gbc);
+        pnlForm.add(new JLabel("Fecha de Nacimiento:"));
+        dcFechaNacimiento = new JDateChooser();
+        dcFechaNacimiento.setDateFormatString("yyyy-MM-dd");
+        java.util.Calendar cal = java.util.Calendar.getInstance(); cal.add(java.util.Calendar.YEAR, -18); dcFechaNacimiento.setMaxSelectableDate(cal.getTime());
+        pnlForm.add(dcFechaNacimiento);
 
-        // Correo
-        gbc.gridy = 4;
-        pnlForm.add(new JLabel("Correo Electrónico:"), gbc);
-        gbc.gridy = 5;
-        txtCorreo = new JTextField();
-        txtCorreo.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtCorreo, gbc);
+        pnlForm.add(new JLabel("Dirección:"));
+        txtDireccion = new JTextField();
+        txtDireccion.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (txtDireccion.getText().length() >= 200) e.consume(); } });
+        pnlForm.add(txtDireccion);
 
-        // Telefono
-        gbc.gridy = 6;
-        pnlForm.add(new JLabel("Teléfono de Contacto:"), gbc);
-        gbc.gridy = 7;
-        txtTelefono = new JTextField();
-        txtTelefono.setPreferredSize(new Dimension(0, 30));
-        pnlForm.add(txtTelefono, gbc);
+        pnlForm.add(new JLabel("Ocupación:"));
+        txtOcupacion = new JTextField();
+        txtOcupacion.addKeyListener(new KeyAdapter() { public void keyTyped(KeyEvent e) { if (!Character.isLetter(e.getKeyChar()) && !Character.isWhitespace(e.getKeyChar()) || txtOcupacion.getText().length() >= 150) e.consume(); } });
+        pnlForm.add(txtOcupacion);
 
-        // Botones
-        gbc.gridy = 8;
-        gbc.insets = new java.awt.Insets(15, 5, 5, 5);
-        JPanel pnlButtons = new JPanel(new GridLayout(2, 2, 8, 8));
-        pnlButtons.setBackground(new Color(248, 250, 252));
+        pnlForm.add(new JLabel("")); pnlForm.add(new JLabel("")); // fillers
 
-        btnRegistrar = new JButton("Registrar");
-        btnRegistrar.setBackground(new Color(16, 185, 129));
-        btnRegistrar.setForeground(Color.WHITE);
-        btnRegistrar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnRegistrar.setFocusPainted(false);
+        JPanel pnlButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        btnRegistrar = new JButton("Registrar"); btnModificar = new JButton("Modificar"); btnEliminar = new JButton("Eliminar"); btnLimpiar = new JButton("Limpiar");
+        btnModificar.setEnabled(false); btnEliminar.setEnabled(false);
+        if ("VOLUNTARIO".equals(gestionmascotas.dp.controladores.SesionUsuario.getUsuarioActual().getCargo())) btnEliminar.setVisible(false);
+        pnlButtons.add(btnRegistrar); pnlButtons.add(btnModificar); pnlButtons.add(btnEliminar); pnlButtons.add(btnLimpiar);
 
-        btnModificar = new JButton("Modificar");
-        btnModificar.setBackground(new Color(59, 130, 246));
-        btnModificar.setForeground(Color.WHITE);
-        btnModificar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnModificar.setFocusPainted(false);
-        btnModificar.setEnabled(false);
+        JPanel pnlTop = new JPanel(new BorderLayout());
+        pnlTop.add(pnlForm, BorderLayout.CENTER);
+        pnlTop.add(pnlButtons, BorderLayout.SOUTH);
+        add(pnlTop, BorderLayout.NORTH);
 
-        btnEliminar = new JButton("Eliminar");
-        btnEliminar.setBackground(new Color(239, 68, 68));
-        btnEliminar.setForeground(Color.WHITE);
-        btnEliminar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnEliminar.setFocusPainted(false);
-        btnEliminar.setEnabled(false);
-
-        btnLimpiar = new JButton("Limpiar");
-        btnLimpiar.setBackground(new Color(100, 116, 139));
-        btnLimpiar.setForeground(Color.WHITE);
-        btnLimpiar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnLimpiar.setFocusPainted(false);
-
-        pnlButtons.add(btnRegistrar);
-        pnlButtons.add(btnModificar);
-        pnlButtons.add(btnEliminar);
-        pnlButtons.add(btnLimpiar);
-
-        pnlForm.add(pnlButtons, gbc);
-
-        add(pnlForm, BorderLayout.WEST);
-
-        // Tabla (Derecha)
-        JPanel pnlTable = new JPanel(new BorderLayout(10, 10));
-        pnlTable.setBackground(Color.WHITE);
-
-        String[] columnas = {"ID", "Nombre", "Identificación", "Correo", "Teléfono"};
-        modelAdoptantes = new DefaultTableModel(columnas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
+        JPanel pnlTable = new JPanel(new BorderLayout());
+        String[] columnas = {"ID", "Cédula", "Nombre", "F. Nacimiento", "Edad", "Dirección", "Ocupación"};
+        modelAdoptantes = new DefaultTableModel(columnas, 0) { public boolean isCellEditable(int row, int column) { return false; } };
         tblAdoptantes = new JTable(modelAdoptantes);
-        tblAdoptantes.setRowHeight(25);
-        tblAdoptantes.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tblAdoptantes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tblAdoptantes.setShowGrid(false);
-
-        JTableHeader header = tblAdoptantes.getTableHeader();
-        header.setBackground(new Color(241, 245, 249));
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-
-        JScrollPane scroll = new JScrollPane(tblAdoptantes);
-        scroll.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240)));
-        pnlTable.add(scroll, BorderLayout.CENTER);
-
+        tblAdoptantes.getColumnModel().getColumn(0).setMaxWidth(30); tblAdoptantes.getColumnModel().getColumn(0).setPreferredWidth(30);
+        tblAdoptantes.getColumnModel().getColumn(4).setMaxWidth(60);
+        pnlTable.add(new JScrollPane(tblAdoptantes), BorderLayout.CENTER);
         add(pnlTable, BorderLayout.CENTER);
 
-        // Listeners
-        btnRegistrar.addActionListener(e -> registrarAdoptante());
-        btnModificar.addActionListener(e -> modificarAdoptante());
-        btnEliminar.addActionListener(e -> eliminarAdoptante());
+        btnRegistrar.addActionListener(e -> registrar());
+        btnModificar.addActionListener(e -> modificar());
+        btnEliminar.addActionListener(e -> eliminar());
         btnLimpiar.addActionListener(e -> limpiarFormulario());
 
         tblAdoptantes.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tblAdoptantes.getSelectedRow() != -1) {
-                cargarAdoptanteSeleccionado();
+                cargarSeleccionado();
             }
         });
 
-        // Inicializar
         recargarTabla();
     }
 
     public void recargarTabla() {
         try {
             modelAdoptantes.setRowCount(0);
-            List<AdoptanteDP> adoptantes = adoptanteMD.obtenerTodos();
-            for (AdoptanteDP a : adoptantes) {
+            List<AdoptanteDP> lista = new AdoptanteDP().consultarDP();
+            for (AdoptanteDP a : lista) {
+                String edadStr = "";
+                if(a.getFechaNacimiento() != null) {
+                    java.time.LocalDate fn = a.getFechaNacimiento().toLocalDate();
+                    edadStr = java.time.Period.between(fn, java.time.LocalDate.now()).getYears() + " años";
+                }
                 modelAdoptantes.addRow(new Object[]{
-                    a.getIdAdoptante(),
-                    a.getNombre(),
-                    a.getIdentificacion(),
-                    a.getCorreo(),
-                    a.getTelefono()
+                    a.getIdAdoptante(), a.getCedula(), a.getNombre(),
+                    a.getFechaNacimiento().toString(), edadStr, a.getDireccion(), a.getOcupacion()
                 });
             }
         } catch (SQLException e) {
-            System.err.println("Error al cargar adoptantes: " + e.getMessage());
+            manejarError(e);
         }
-    }
-
-    private void registrarAdoptante() {
-        if (!validarCampos()) return;
-
-        AdoptanteDP a = new AdoptanteDP();
-        a.setNombre(txtNombre.getText().trim());
-        a.setIdentificacion(txtIdentificacion.getText().trim());
-        a.setCorreo(txtCorreo.getText().trim());
-        a.setTelefono(txtTelefono.getText().trim());
-
-        try {
-            int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
-            adoptanteMD.insertar(a, ejecutor);
-            
-            JOptionPane.showMessageDialog(this, "Adoptante registrado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            limpiarFormulario();
-            recargarTabla();
-            onDataChanged.run();
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, 
-                "Error de base de datos al registrar adoptante: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void modificarAdoptante() {
-        if (selectedAdoptanteId == -1) return;
-        if (!validarCampos()) return;
-
-        AdoptanteDP a = new AdoptanteDP();
-        a.setIdAdoptante(selectedAdoptanteId);
-        a.setNombre(txtNombre.getText().trim());
-        a.setIdentificacion(txtIdentificacion.getText().trim());
-        a.setCorreo(txtCorreo.getText().trim());
-        a.setTelefono(txtTelefono.getText().trim());
-
-        try {
-            int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
-            adoptanteMD.actualizar(a, ejecutor);
-            
-            JOptionPane.showMessageDialog(this, "Adoptante modificado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            limpiarFormulario();
-            recargarTabla();
-            onDataChanged.run();
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, 
-                "Error de base de datos al modificar adoptante: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void eliminarAdoptante() {
-        if (selectedAdoptanteId == -1) return;
-        int result = JOptionPane.showConfirmDialog(this, 
-            "¿Está seguro de eliminar este adoptante?", 
-            "Confirmar", JOptionPane.YES_NO_OPTION);
-        
-        if (result == JOptionPane.YES_OPTION) {
-            try {
-                int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
-                adoptanteMD.eliminar(selectedAdoptanteId, ejecutor);
-                
-                JOptionPane.showMessageDialog(this, "Adoptante eliminado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                limpiarFormulario();
-                recargarTabla();
-                onDataChanged.run();
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Error al eliminar adoptante (posiblemente vinculado a una adopción activa): " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
-    private void cargarAdoptanteSeleccionado() {
-        int row = tblAdoptantes.getSelectedRow();
-        if (row != -1) {
-            selectedAdoptanteId = (int) modelAdoptantes.getValueAt(row, 0);
-            txtNombre.setText((String) modelAdoptantes.getValueAt(row, 1));
-            txtIdentificacion.setText((String) modelAdoptantes.getValueAt(row, 2));
-            txtCorreo.setText((String) modelAdoptantes.getValueAt(row, 3));
-            txtTelefono.setText((String) modelAdoptantes.getValueAt(row, 4));
-
-            aplicarPermisosVisuales();
-        }
-    }
-
-    private void limpiarFormulario() {
-        selectedAdoptanteId = -1;
-        txtNombre.setText("");
-        txtIdentificacion.setText("");
-        txtCorreo.setText("");
-        txtTelefono.setText("");
-        
-        tblAdoptantes.clearSelection();
-        btnRegistrar.setEnabled(true);
-        btnModificar.setEnabled(false);
-        btnEliminar.setEnabled(false);
-
-        aplicarPermisosVisuales();
     }
 
     private boolean validarCampos() {
-        if (txtNombre.getText().trim().isEmpty() || 
-            txtIdentificacion.getText().trim().isEmpty() || 
-            txtCorreo.getText().trim().isEmpty() || 
-            txtTelefono.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+        if (txtCedula.getText().trim().isEmpty() || txtNombre.getText().trim().isEmpty() || 
+            txtDireccion.getText().trim().isEmpty() || txtOcupacion.getText().trim().isEmpty() || dcFechaNacimiento.getDate() == null) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.incomplete.msg"), GestorMensajes.get("val.incomplete.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (!txtCedula.getText().trim().matches("^\\d{10}$")) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.cedula"), GestorMensajes.get("val.error.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (!txtNombre.getText().trim().matches("^[a-zA-ZñÑáéíóúÁÉÍÓÚ ]{3,100}$")) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.nombres"), GestorMensajes.get("val.error.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (txtDireccion.getText().trim().length() < 5 || txtDireccion.getText().trim().length() > 200) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.direccion"), GestorMensajes.get("val.error.title"), JOptionPane.WARNING_MESSAGE);
             return false;
         }
         return true;
     }
 
-    /**
-     * Aplica restricciones visuales nativas usando setEnabled(false) (STD-05).
-     * Joselyn Cadena (DESARROLLO) y el Líder tienen acceso de escritura.
-     */
-    public void aplicarPermisosVisuales() {
-        boolean tienePermisoEscritura = SesionUsuario.esLider() || SesionUsuario.esDesarrollo();
-        
-        if (!tienePermisoEscritura) {
-            btnRegistrar.setEnabled(false);
-            btnModificar.setEnabled(false);
-            btnEliminar.setEnabled(false);
-            
-            txtNombre.setEnabled(false);
-            txtIdentificacion.setEnabled(false);
-            txtCorreo.setEnabled(false);
-            txtTelefono.setEnabled(false);
-        } else {
-            txtNombre.setEnabled(true);
-            txtIdentificacion.setEnabled(true);
-            txtCorreo.setEnabled(true);
-            txtTelefono.setEnabled(true);
+    private String fmt(String t) {
+        String s = java.text.Normalizer.normalize(t.trim(), java.text.Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "").toLowerCase();
+        StringBuilder r = new StringBuilder();
+        for (String p : s.split(" ")) if (!p.isEmpty()) r.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1)).append(" ");
+        return r.toString().trim();
+    }
 
-            if (selectedAdoptanteId != -1) {
-                btnRegistrar.setEnabled(false);
-                btnModificar.setEnabled(true);
-                btnEliminar.setEnabled(true);
-            } else {
-                btnRegistrar.setEnabled(true);
-                btnModificar.setEnabled(false);
-                btnEliminar.setEnabled(false);
-            }
+    private void manejarError(SQLException e) {
+        String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        System.err.printf("[%s] %s: %s%n", timestamp, e.getClass().getSimpleName(), e.getMessage());
+        String msg = GestorMensajes.get("error.db.default");
+        if (e.getMessage() != null) {
+            String lower = e.getMessage().toLowerCase();
+            if ("23505".equals(e.getSQLState()) || lower.contains("uq_") || lower.contains("duplicate key") || lower.contains("unique constraint") || lower.contains("llave duplicada") || lower.contains("unicidad")) msg = GestorMensajes.get("error.db.duplicate");
+            else if (lower.contains("foreign key")) msg = GestorMensajes.get("error.db.foreignkey");
+            else if (lower.contains("cédula") || lower.contains("correo") || lower.contains("licencia") || lower.contains("dependencias")) msg = e.getMessage();
         }
+        JOptionPane.showMessageDialog(this, msg, GestorMensajes.get("error.db.title"), JOptionPane.ERROR_MESSAGE);
+    }
+
+    private boolean validarEdad(java.util.Date fechaNac) {
+        if (fechaNac == null) return false;
+        LocalDate fn = fechaNac.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        int edad = Period.between(fn, LocalDate.now()).getYears();
+        if (edad < 18) {
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("val.edad.adoptante"), GestorMensajes.get("val.error.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+
+    private void registrar() {
+        if (!validarCampos()) return;
+        java.util.Date d = dcFechaNacimiento.getDate();
+        if (!validarEdad(d)) return;
+
+        AdoptanteDP a = new AdoptanteDP();
+        a.setCedula(txtCedula.getText().trim());
+        a.setNombre(fmt(txtNombre.getText()));
+        a.setFechaNacimiento(new java.sql.Date(d.getTime()));
+        a.setDireccion(fmt(txtDireccion.getText()));
+        a.setOcupacion(fmt(txtOcupacion.getText()));
+
+        try {
+            int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
+            a.grabarDP(ejecutor);
+            limpiarFormulario();
+            recargarTabla();
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("success.register", "Adoptante"), GestorMensajes.get("success.title"), JOptionPane.INFORMATION_MESSAGE);
+            onDataChanged.run();
+        } catch (SQLException e) {
+            manejarError(e);
+        }
+    }
+
+    private void modificar() {
+        if (selectedAdoptanteId == -1 || !validarCampos()) return;
+        java.util.Date d = dcFechaNacimiento.getDate();
+        if (!validarEdad(d)) return;
+
+        AdoptanteDP a = new AdoptanteDP();
+        a.setIdAdoptante(selectedAdoptanteId);
+        a.setCedula(txtCedula.getText().trim());
+        a.setNombre(fmt(txtNombre.getText()));
+        a.setFechaNacimiento(new java.sql.Date(d.getTime()));
+        a.setDireccion(fmt(txtDireccion.getText()));
+        a.setOcupacion(fmt(txtOcupacion.getText()));
+
+        try {
+            int ejecutor = SesionUsuario.getUsuarioActual().getIdPersonal();
+            a.grabarDP(ejecutor);
+            limpiarFormulario();
+            recargarTabla();
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("success.update", "Adoptante"), GestorMensajes.get("success.title"), JOptionPane.INFORMATION_MESSAGE);
+            onDataChanged.run();
+        } catch (SQLException e) {
+            manejarError(e);
+        }
+    }
+
+    private void eliminar() {
+        if (selectedAdoptanteId == -1) return;
+        int confirm = JOptionPane.showConfirmDialog(this, GestorMensajes.get("confirm.delete.msg"), GestorMensajes.get("confirm.delete.title"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        
+        try {
+            AdoptanteDP a = new AdoptanteDP();
+            a.setIdAdoptante(selectedAdoptanteId);
+            a.eliminarDP(SesionUsuario.getUsuarioActual().getIdPersonal());
+            limpiarFormulario();
+            recargarTabla();
+            JOptionPane.showMessageDialog(this, GestorMensajes.get("success.delete", "Adoptante"), GestorMensajes.get("success.title"), JOptionPane.INFORMATION_MESSAGE);
+            onDataChanged.run();
+        } catch (SQLException e) {
+            manejarError(e);
+        }
+    }
+
+    private void cargarSeleccionado() {
+        int row = tblAdoptantes.getSelectedRow();
+        if (row != -1) {
+            selectedAdoptanteId = (int) modelAdoptantes.getValueAt(row, 0);
+            txtCedula.setText((String) modelAdoptantes.getValueAt(row, 1));
+            txtNombre.setText((String) modelAdoptantes.getValueAt(row, 2));
+            try {
+                dcFechaNacimiento.setDate(java.sql.Date.valueOf((String) modelAdoptantes.getValueAt(row, 3)));
+            } catch (Exception ignored) {}
+            txtDireccion.setText((String) modelAdoptantes.getValueAt(row, 5));
+            txtOcupacion.setText((String) modelAdoptantes.getValueAt(row, 6));
+
+            btnRegistrar.setEnabled(false);
+            btnModificar.setEnabled(true);
+            btnEliminar.setEnabled(true);
+        }
+    }
+
+    private void limpiarFormulario() {
+        selectedAdoptanteId = -1;
+        txtCedula.setText("");
+        txtNombre.setText("");
+        dcFechaNacimiento.setDate(new java.util.Date());
+        txtDireccion.setText("");
+        txtOcupacion.setText("");
+
+        tblAdoptantes.clearSelection();
+        btnRegistrar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
     }
 }

@@ -3,32 +3,23 @@ package gestionmascotas.md;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 
-/**
- * Acceso a Datos de Auditoría (Manejo de Datos - MD).
- * Sigue el estándar STD-06: Registrar el ID del personal ejecutor y la marca de tiempo.
- */
 public class AuditoriaMD {
-
-    /**
-     * Registra una acción en la tabla transversal Auditoria.
-     */
-    public static void registrarAuditoria(Connection conn, int idPersonal, String accion, String detalle) throws SQLException {
-        String sql = "INSERT INTO Auditoria (idPersonal, accion, detalle, fechaRegistro) VALUES (?, ?, ?, ?)";
-        boolean esConexionExterna = (conn != null);
-        Connection localConn = esConexionExterna ? conn : ConexionBD.obtenerConexion();
-        
-        try (PreparedStatement ps = localConn.prepareStatement(sql)) {
-            ps.setInt(1, idPersonal);
-            ps.setString(2, accion);
-            ps.setString(3, detalle);
-            ps.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+    public static void registrarAuditoria(Connection conn, String tabla, String accion, String detalle) throws SQLException {
+        String cedula = "SISTEMA";
+        String rol = "N/A";
+        if (gestionmascotas.dp.controladores.SesionUsuario.getUsuarioActual() != null) {
+            cedula = gestionmascotas.dp.controladores.SesionUsuario.getUsuarioActual().getCedula();
+            rol = gestionmascotas.dp.controladores.SesionUsuario.getUsuarioActual().getCargo();
+        }
+        String sql = "INSERT INTO LogAuditoria (usuario_identificacion, rol_usuario, tabla_afectada, accion, detalle) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, cedula);
+            ps.setString(2, rol);
+            ps.setString(3, tabla);
+            ps.setString(4, accion);
+            ps.setString(5, detalle);
             ps.executeUpdate();
-        } finally {
-            if (!esConexionExterna) {
-                localConn.close(); // Liberar si fue abierta localmente
-            }
         }
     }
 }

@@ -1,16 +1,9 @@
 package gestionmascotas;
 
-import gestionmascotas.gui.VentanaPrincipal;
-
 import javax.swing.*;
 
-/**
- * Punto de entrada de la aplicación.
- * Inicializa el tema Nimbus Look and Feel y abre la ventana principal.
- */
 public class Main {
     public static void main(String[] args) {
-        // Configurar un Look and Feel agradable (Nimbus)
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -19,7 +12,6 @@ public class Main {
                 }
             }
         } catch (Exception e) {
-            // Fallback al sistema nativo si Nimbus no está disponible
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (Exception ex) {
@@ -27,10 +19,9 @@ public class Main {
             }
         }
 
-        // Ejecutar en el hilo de despacho de eventos de Swing (EDT)
         SwingUtilities.invokeLater(() -> {
-            VentanaPrincipal frame = new VentanaPrincipal();
-            frame.setVisible(true);
+            gestionmascotas.gui.VentanaLogin login = new gestionmascotas.gui.VentanaLogin();
+            login.setVisible(true);
         });
     }
 }
